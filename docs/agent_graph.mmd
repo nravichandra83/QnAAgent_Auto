@@ -1,0 +1,35 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	classify_intent(classify_intent)
+	run_template(run_template)
+	generate_sql(generate_sql)
+	validate_sql(validate_sql)
+	execute_sql(execute_sql)
+	compose_answer(compose_answer)
+	give_up(give_up)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> classify_intent;
+	classify_intent -. &nbsp;adhoc&nbsp; .-> generate_sql;
+	classify_intent -. &nbsp;core&nbsp; .-> run_template;
+	execute_sql -. &nbsp;ok&nbsp; .-> compose_answer;
+	execute_sql -. &nbsp;retry&nbsp; .-> generate_sql;
+	execute_sql -. &nbsp;give up&nbsp; .-> give_up;
+	generate_sql --> validate_sql;
+	run_template --> execute_sql;
+	validate_sql -. &nbsp;valid&nbsp; .-> execute_sql;
+	validate_sql -. &nbsp;retry&nbsp; .-> generate_sql;
+	validate_sql -. &nbsp;give up&nbsp; .-> give_up;
+	compose_answer --> __end__;
+	give_up --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+	classDef llm fill:#dbeafe,stroke:#2563eb,stroke-width:2px
+	classDef mask fill:#fef3c7,stroke:#d97706
+	class classify_intent,generate_sql,compose_answer llm
+	class execute_sql mask

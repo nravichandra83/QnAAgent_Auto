@@ -1,0 +1,56 @@
+# PII governance policy. Changing classification or behaviour here needs no code change.
+version: 1
+
+# Entity types the masker can produce. reveal_to_user: false means the token is replaced
+# by [REDACTED] even in the final answer (irreversible for the user).
+entity_types:
+  PERSON:      {reveal_to_user: true}
+  EMAIL:       {reveal_to_user: true}
+  PHONE:       {reveal_to_user: true}
+  ADDRESS:     {reveal_to_user: true}
+  ZIP:         {reveal_to_user: true}
+  SSN:         {reveal_to_user: false}
+  CREDIT_CARD: {reveal_to_user: false}
+
+# Column classification (Table.Column -> entity type). Query output columns are traced back
+# to these with SQL lineage, so aliases and expressions are masked too.
+columns:
+  Customers.FirstName:    PERSON
+  Customers.LastName:     PERSON
+  Customers.Email:        EMAIL
+  Customers.Phone:        PHONE
+  Customers.AddressLine1: ADDRESS
+  Customers.AddressLine2: ADDRESS
+  Customers.Zip:          ZIP
+  Customers.SSN:          SSN
+
+# Never selectable by generated SQL (also DENY SELECT for agent_ro in the database).
+restricted_columns:
+  - Customers.SSN
+
+detectors:
+  regex: [SSN, CREDIT_CARD, EMAIL, PHONE]      # applied in this order (first match wins)
+  known_values:
+    enabled: true                              # this contract's customer profile, loaded per session
+    min_length: 3                              # shorter values ("Co") are only masked as part of longer ones
+  ner:
+    enabled: true                              # Microsoft Presidio + spaCy, for names typed in questions
+    model: en_core_web_sm                      # en_core_web_lg is more accurate (larger download)
+    entities: [PERSON]
+    min_score: 0.6
+
+# Words and patterns never masked (domain vocabulary NER can mistake for names).
+allow_list:
+  terms: [Commenced, PaidOff, Restructure, Rebook, Lease, Loan, Invoiced, NotInvoiced, Suppressed,
+          Suspended, Paid, Individual, Business, Sundry, Contracts, Customers, Receivables]
+  patterns: ['CT-\d+']
+
+# Last line of defence on every LLM call: re-scan the outbound payload.
+#   mask  - mask anything found, record it in the audit log, continue
+#   block - refuse the call (raise PiiLeakError)
+egress_guard:
+  mode: mask
+
+audit:
+  path: logs/audit.jsonl
+  include_payloads: false                      # true adds the masked LLM payloads to each record
