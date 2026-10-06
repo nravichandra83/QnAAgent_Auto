@@ -5,6 +5,12 @@ RESOLVE_CONTRACT = """
 SELECT Id, ContractType FROM dbo.Contracts WHERE SequenceNumber = :seq
 """
 
+# Contract picker for the UI (no PII). Will be filtered by user entitlements once users exist.
+LIST_CONTRACTS = """
+SELECT SequenceNumber, ContractType, COALESCE(Status, 'Not yet commenced') AS Status
+FROM dbo.Contracts ORDER BY SequenceNumber
+"""
+
 # The contract's customer PII, loaded into the session vault as known values so they are
 # masked wherever they appear. Never sent to the LLM. SSN is deliberately excluded.
 CUSTOMER_PROFILE = """

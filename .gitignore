@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .venv/
 logs/
+.pytest_cache/
+.streamlit/secrets.toml

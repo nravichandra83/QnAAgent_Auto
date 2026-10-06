@@ -210,7 +210,7 @@ Never written: raw PII, the vault, unmasked answers.
 | `entity_types.*.reveal_to_user` | Whether the user sees the real value |
 | `columns` | Table.Column → entity type (drives lineage masking) |
 | `restricted_columns` | Never selectable (also add a `DENY SELECT` for `agent_ro`) |
-| `detectors.regex` | Which patterns run, in priority order |
+| `detectors.regex` | Which patterns run (order does not matter; overlaps resolve earliest, then longest) |
 | `detectors.known_values` | On/off and minimum length |
 | `detectors.ner` | On/off, spaCy model (`en_core_web_lg` is more accurate), entities, minimum score |
 | `allow_list` | Terms and patterns never masked |

@@ -6,6 +6,8 @@ Spec: https://claude.ai/code/artifact/9ee2d630-f0f8-4c17-a22d-d228c2acf13c
 
 ## How a question flows
 
+Full technical walkthrough: [Data flow](docs/dataflow.md).
+
 ```mermaid
 flowchart LR
     U([User]) -->|raw question| S1
@@ -112,8 +114,7 @@ Full write-up: [PII implementation details](docs/PII%20implementation%20details.
 2. Python environment:
    ```powershell
    python -m venv .venv
-   .\.venv\Scripts\pip install langgraph langchain-openai sqlalchemy pyodbc sqlglot python-dotenv pyyaml presidio-analyzer pytest
-   .\.venv\Scripts\python -m spacy download en_core_web_sm
+   .\.venv\Scripts\pip install -r requirements.txt     # includes the spaCy en_core_web_sm model
    ```
 3. `.env` in the project root (git-ignored):
    ```
@@ -125,6 +126,19 @@ Full write-up: [PII implementation details](docs/PII%20implementation%20details.
 
 ## Use
 
+**Web UI (Streamlit):**
+
+```powershell
+.\.venv\Scripts\streamlit run app\streamlit_app.py      # opens http://localhost:8501
+```
+
+Pick a contract and an as-of date in the sidebar, then chat. Toggles show the SQL and result table for each answer,
+and what the LLM actually saw (masked). Switching contract or clicking **New conversation** closes the session and
+wipes its PII vault. The contract list is not yet filtered per user; add sign-in and entitlement checks before
+exposing the app to real users.
+
+**Command line:**
+
 ```powershell
 .\.venv\Scripts\python -m agent.cli CT-1001                      # chat
 .\.venv\Scripts\python -m agent.cli CT-1003 -q "What is Maria Lopez's phone number?" --as-of 2026-10-01 --show-masked
@@ -135,8 +149,8 @@ Full write-up: [PII implementation details](docs/PII%20implementation%20details.
 ## Test
 
 ```powershell
-.\.venv\Scripts\python -m pytest            # offline (191): validator, governance, PII leak, templates, graph
-.\.venv\Scripts\python -m pytest -m live -s # live OpenAI: 8 core + 12 ad-hoc + 4 PII questions, payloads checked
+.\.venv\Scripts\python -m pytest            # offline (193): validator, governance, PII leak, templates, graph
+.\.venv\Scripts\python -m pytest -m live -s # live OpenAI: 8 core + 12 ad-hoc + 4 PII questions + UI, payloads checked
 ```
 
 The PII leak tests record every payload that would go to the LLM and fail if any seeded customer value appears in it
@@ -146,6 +160,7 @@ or in the audit log. The live tests do the same with the real payloads sent to O
 
 | Path | What |
 | --- | --- |
+| `app/streamlit_app.py` | Streamlit chat UI |
 | `agent/session.py` | `ContractSession`: the PII boundary (mask, run graph, unmask, audit) |
 | `agent/graph.py` | LangGraph wiring |
 | `agent/nodes.py` | Node functions; LLM only in classify, generate SQL, compose, always via the egress guard |

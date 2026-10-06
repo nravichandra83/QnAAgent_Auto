@@ -29,7 +29,9 @@ restricted_columns:
   - Customers.SSN
 
 detectors:
-  regex: [SSN, CREDIT_CARD, EMAIL, PHONE]      # applied in this order (first match wins)
+  # Which regex patterns run. Order does not matter: all detectors report every match, and where
+  # matches overlap the masker keeps the one that starts earliest, then the longest.
+  regex: [SSN, CREDIT_CARD, EMAIL, PHONE]
   known_values:
     enabled: true                              # this contract's customer profile, loaded per session
     min_length: 3                              # shorter values ("Co") are only masked as part of longer ones

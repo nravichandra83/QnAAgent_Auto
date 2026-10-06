@@ -120,6 +120,12 @@ class ContractSession:
         return TurnResult(answer=answer, masked_question=masked_q.text, masked_answer=state["answer"],
                           state=state)
 
+    def unmask_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Masked result rows -> rows for display to the end user (reveal policy applies)."""
+        vault = self._vaults.get(self.session_id)
+        return [{col: self._masker.unmask(val, vault) if isinstance(val, str) else val
+                 for col, val in row.items()} for row in rows]
+
     def close(self) -> None:
         self._vaults.close(self.session_id)
 
